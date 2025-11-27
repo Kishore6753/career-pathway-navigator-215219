@@ -3,15 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@supabase/supabase-js": "^2.44.4",
+    "dotenv": "^16.4.5",
+    "glob": "^10.3.10",
+    "pg": "^8.11.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "xlsx": "^0.19.3",
+    "yargs": "^17.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "seed:schema": "node scripts/seed_schema.js",
+    "seed:data": "node scripts/seed_data.js",
+    "seed:all": "npm run seed:schema && npm run seed:data"
   },
   "eslintConfig": {
     "extends": "react-app"
