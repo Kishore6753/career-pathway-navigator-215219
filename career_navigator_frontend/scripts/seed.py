@@ -23,7 +23,7 @@ Environment:
 
 Optional fallbacks (if above are not set):
 - REACT_APP_SUPABASE_URL
-- REACT_APP_SUPABASE_KEY (requires RLS disabled; service role is preferred)
+- REACT_APP_SUPABASE_SERVICE_ROLE_KEY or REACT_APP_SUPABASE_KEY (requires RLS disabled; service role is preferred)
 
 Usage:
   python3 seed.py --help
@@ -678,6 +678,12 @@ def upsert_role_descriptions(client: SupabaseRestClient, rd_rows: List[dict]) ->
 # ---------- CLI and main ----------
 def _build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Seed Supabase from Excel attachments using REST and idempotent upserts.")
+    # Optional Supabase overrides (environment is preferred)
+    p.add_argument("--supabase-url", dest="supabase_url", type=str, default=None,
+                   help="Override Supabase URL (fallback to SUPABASE_URL/REACT_APP_SUPABASE_URL)")
+    p.add_argument("--supabase-key", dest="supabase_key", type=str, default=None,
+                   help="Override Supabase Service Role Key (fallback to SUPABASE_SERVICE_ROLE_KEY/REACT_APP_SUPABASE_SERVICE_ROLE_KEY/REACT_APP_SUPABASE_KEY)")
+
     p.add_argument("--competency", dest="competency_xlsx", type=str, default=DEFAULTS["competency_xlsx"],
                    help="Path to Competency_mapping.xlsx")
     p.add_argument("--adjacency", dest="adjacency_xlsx", type=str, default=DEFAULTS["adjacency_xlsx"],
@@ -697,7 +703,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 def _resolve_env() -> Tuple[Optional[str], Optional[str]]:
     url = os.getenv("SUPABASE_URL") or os.getenv("REACT_APP_SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("REACT_APP_SUPABASE_KEY")
+    # Accept both REACT_APP_SUPABASE_SERVICE_ROLE_KEY and REACT_APP_SUPABASE_KEY fallbacks
+    key = (
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("REACT_APP_SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("REACT_APP_SUPABASE_KEY")
+    )
     return url, key
 
 
@@ -710,8 +721,14 @@ def main():
     LOG.setLevel(getattr(logging, args.log_level.upper(), logging.INFO))
 
     supabase_url, supabase_key = _resolve_env()
+    # Allow explicit CLI override
+    if getattr(args, "supabase_url", None):
+        supabase_url = args.supabase_url
+    if getattr(args, "supabase_key", None):
+        supabase_key = args.supabase_key
+
     if not supabase_url or not supabase_key:
-        LOG.error("Missing SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY in environment. Aborting.")
+        LOG.error("Missing SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY in environment (or --supabase-url/--supabase-key overrides). Aborting.")
         LOG.error("Note: REACT_APP_* fallbacks may be used if present, but service role key is preferred.")
         sys.exit(1)
 
