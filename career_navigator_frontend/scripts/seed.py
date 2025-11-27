@@ -702,13 +702,28 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _resolve_env() -> Tuple[Optional[str], Optional[str]]:
+    """Resolve Supabase URL and key strictly from environment variables.
+
+    Preference order:
+    - URL: SUPABASE_URL, then REACT_APP_SUPABASE_URL
+    - KEY: SUPABASE_SERVICE_ROLE_KEY (preferred), then REACT_APP_SUPABASE_SERVICE_ROLE_KEY,
+           then SUPABASE_KEY (anon), then REACT_APP_SUPABASE_KEY (anon)
+
+    Returns (url, key) and never reads .env files directly.
+    """
     url = os.getenv("SUPABASE_URL") or os.getenv("REACT_APP_SUPABASE_URL")
-    # Accept both REACT_APP_SUPABASE_SERVICE_ROLE_KEY and REACT_APP_SUPABASE_KEY fallbacks
     key = (
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         or os.getenv("REACT_APP_SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_KEY")
         or os.getenv("REACT_APP_SUPABASE_KEY")
     )
+    if url:
+        LOG.info(f"Using Supabase URL from environment: {url}")
+    if os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("REACT_APP_SUPABASE_SERVICE_ROLE_KEY"):
+        LOG.info("Using service role key for seeding.")
+    elif key:
+        LOG.info("Using anon key for seeding (ensure RLS is disabled on target tables).")
     return url, key
 
 
