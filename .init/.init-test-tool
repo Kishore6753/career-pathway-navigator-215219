@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/career-pathway-navigator-215219/career_navigator_frontend"
+}
